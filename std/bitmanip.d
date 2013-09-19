@@ -455,7 +455,7 @@ struct BitArray
                 ptr = b.ptr;
                 if (newdim & (bitsPerSizeT-1))
                 {   // Set any pad bits to 0
-                    ptr[newdim - 1] &= ~(~0 << (newdim & (bitsPerSizeT-1)));
+                    ptr[newdim - 1] &= ~(~cast(size_t)0 << (newdim & (bitsPerSizeT-1)));
                 }
             }
 
@@ -821,7 +821,7 @@ struct BitArray
         }
         for (size_t j = 0; j < len-i * bitsPerSizeT; j++)
         {
-            size_t mask = cast(size_t)(1 << j);
+            size_t mask = cast(size_t)1 << j;
             auto c = (cast(long)(p1[i] & mask) - cast(long)(p2[i] & mask));
             if (c)
                 return c > 0 ? 1 : -1;
@@ -865,6 +865,19 @@ struct BitArray
             BitArray y; y.init(v);
             assert(x < y);
             assert(x <= y);
+        }
+
+        foreach (i; 1 .. 256)
+        {
+            foreach (j; 0 .. i)
+            {
+                BitArray a1, a2;
+                a1.length = i;
+                a2.length = i;
+                a1[j] = true;
+                assert(a1 > a2);
+                assert(a1 >= a2);
+            }
         }
     }
 
@@ -985,7 +998,7 @@ struct BitArray
         for (size_t i = 0; i < dim; i++)
             result.ptr[i] = ~this.ptr[i];
         if (len & (bitsPerSizeT-1))
-            result.ptr[dim - 1] &= ~(~0 << (len & (bitsPerSizeT-1)));
+            result.ptr[dim - 1] &= ~(~cast(size_t)0 << (len & (bitsPerSizeT-1)));
         return result;
     }
 
