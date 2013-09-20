@@ -806,27 +806,44 @@ struct BitArray
      */
     int opCmp(BitArray a2) const
     {
-        uint i;
-
         auto len = this.length;
         if (a2.length < len)
             len = a2.length;
         auto p1 = this.ptr;
         auto p2 = a2.ptr;
         auto n = len / bitsPerSizeT;
-        for (i = 0; i < n; i++)
+
+        foreach  (i; 0 .. n)
         {
             if (p1[i] != p2[i])
-                break;                // not equal
+            {
+                foreach (j; 0 .. bitsPerSizeT)
+                {
+                    size_t mask = cast(size_t)1 << j;
+
+                    if ((p1[i] ^ p2[i]) & mask)
+                    {
+                        if (p1[i] & mask) return 1;
+                        else return -1;
+                    }
+                }
+            }
         }
-        for (size_t j = 0; j < len-i * bitsPerSizeT; j++)
+
+        foreach (j; 0 .. len % bitsPerSizeT)
         {
             size_t mask = cast(size_t)1 << j;
-            auto c = (cast(long)(p1[i] & mask) - cast(long)(p2[i] & mask));
-            if (c)
-                return c > 0 ? 1 : -1;
+
+            if ((p1[n] ^ p2[n]) & mask)
+            {
+                if (p1[n] & mask) return 1;
+                else return -1;
+            }
         }
-        return cast(int)this.len - cast(int)a2.length;
+
+        if (this.length < a2.length) return -1;
+        if (this.length > a2.length) return 1;
+        return 0;
     }
 
     unittest
@@ -863,18 +880,21 @@ struct BitArray
             BitArray x; x.init(v);
             v[i-1] = true;
             BitArray y; y.init(v);
+        
             assert(x < y);
             assert(x <= y);
         }
 
-        foreach (i; 1 .. 256)
+
+        foreach (i; 2 .. 256)
         {
-            foreach (j; 0 .. i)
+            foreach (j; 1 .. i)
             {
                 BitArray a1, a2;
                 a1.length = i;
                 a2.length = i;
-                a1[j] = true;
+                a1[j-1] = true;
+                a2[j] = true;
                 assert(a1 > a2);
                 assert(a1 >= a2);
             }
